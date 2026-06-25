@@ -11,7 +11,7 @@ uv add fastapi uvicorn pydantic pydantic-settings httpx structlog mistralai supa
 uv add --dev pytest ruff
 ```
 
-Une bibliothèque d'extraction de texte PDF (pour transformer les URD en Markdown) sera ajoutée à l'étape d'ingestion — voir [../architecture.md](../architecture.md), section « Pipeline d'ingestion ». Choisis-la à ce moment-là selon la qualité d'extraction sur des URD réels.
+Les bibliothèques d'extraction de texte (pour transformer les URD en Markdown) seront ajoutées à l'étape d'ingestion — voir [../architecture.md](../architecture.md), section « Pipeline d'ingestion ». Les URD sont surtout du xHTML iXBRL (ESEF) et, pour de rares anciens exercices, du PDF : prévois un parser HTML/xHTML et un extracteur PDF. Choisis-les à ce moment-là selon la qualité d'extraction sur des URD réels.
 
 ## Migrations de base de données
 

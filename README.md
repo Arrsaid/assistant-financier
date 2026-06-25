@@ -61,6 +61,6 @@ Le corpus est le **Document d'Enregistrement Universel (URD)** des sociétés du
 
 Par défaut, le téléchargeur prévu récupère les URD récents (exercices 2020–2025) pour un petit échantillon d'émetteurs (LVMH, TotalEnergies, Sanofi, L'Oréal, Air Liquide) dans des dossiers par année sous `data/downloads/`, et écrit un `manifest.json`.
 
-Contrairement aux dépôts SEC (HTML structuré), les URD français sont distribués en **PDF** ; l'ingestion doit donc extraire le PDF en Markdown avant le chunking.
+Contrairement à une idée répandue, les URD de ce flux AMF ne sont pas en PDF : depuis l'exercice 2021 ils sont distribués au format **ESEF** (archive ZIP contenant un fichier **xHTML iXBRL**), seuls quelques anciens exercices restant en PDF. L'ingestion doit donc extraire le texte (xHTML ou PDF) en Markdown avant le chunking. Voir [data/README.md](data/README.md).
 
 Les fichiers téléchargés sont gitignorés ; le dossier `data/` reste dans git pour le script et les notes.

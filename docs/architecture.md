@@ -26,7 +26,7 @@ flowchart LR
 
     mistral[Mistral AI<br/>LLM + embeddings]
     corpus[Corpus URD - AMF]
-    ingestion[Pipeline d'ingestion<br/>téléchargement, PDF→Markdown, chunking, embeddings]
+    ingestion[Pipeline d'ingestion<br/>téléchargement, ESEF/xHTML→Markdown, chunking, embeddings]
 
     frontend -->|sert l'app| browser
     browser -->|connexion| auth
@@ -72,7 +72,7 @@ Backend :
 - Modèles SQLAlchemy + migrations Alembic pour la gestion du schéma
 - `pgvector` de Supabase pour la recherche sémantique
 - Recherche plein texte Postgres (configuration `french`) pour la recherche lexicale
-- Une bibliothèque d'extraction de texte PDF pour transformer les URD (PDF) en Markdown
+- Une bibliothèque d'extraction de texte pour transformer les URD en Markdown : surtout du **xHTML iXBRL** (format ESEF), et du **PDF** pour les rares anciens exercices
 - `httpx` pour le HTTP sortant
 - `structlog` pour les logs structurés
 
@@ -281,7 +281,7 @@ Les tables Supabase doivent être petites et orientées produit :
 - `source_documents` : enregistrements de documents originaux avec métadonnées de dépôt, URL source et contenu Markdown normalisé.
 - `document_chunks` : texte du chunk, métadonnées de chunk, embeddings et vecteurs de recherche plein texte générés.
 
-`source_documents` stocke la version Markdown normalisée de chaque URD afin que l'application puisse re-chunker, inspecter et citer le texte extrait original sans retourner aux PDF téléchargés. `document_chunks` stocke des passages prêts pour la recherche :
+`source_documents` stocke la version Markdown normalisée de chaque URD afin que l'application puisse re-chunker, inspecter et citer le texte extrait original sans retourner aux fichiers sources téléchargés (xHTML ESEF ou PDF). `document_chunks` stocke des passages prêts pour la recherche :
 
 - ID de chunk
 - ID de document
@@ -372,17 +372,17 @@ Ne lis pas les variables d'environnement directement depuis les composants, rout
 
 ## Pipeline d'ingestion
 
-L'ingestion est le chemin qui prépare les URD pour la recherche. Contrairement aux dépôts SEC (HTML structuré), les URD français sont des **PDF** volumineux, ce qui ajoute une étape d'extraction.
+L'ingestion est le chemin qui prépare les URD pour la recherche. Le flux AMF distribue ces URD au format **ESEF** : une archive ZIP contenant un gros fichier **xHTML iXBRL** (HTML avec données financières balisées en XBRL). Seuls de rares anciens exercices (≈2020) sont encore des **PDF**. L'ingestion doit donc gérer les deux entrées, le xHTML étant majoritaire.
 
 Étapes :
 
-1. **Télécharger** les PDF d'URD depuis info-financiere.fr (AMF), regroupés par exercice (voir `data/`).
-2. **Extraire** chaque PDF en Markdown normalisé, en préservant titres, sections et tableaux autant que possible.
-3. **Chunker** le Markdown en passages prêts pour la recherche, avec métadonnées (société, ISIN, exercice, page, section).
+1. **Télécharger** les URD depuis info-financiere.fr (AMF), regroupés par exercice (voir `data/`). `download.py` dézippe l'ESEF et extrait le rapport xHTML ; les rares anciens URD restent en PDF.
+2. **Extraire** chaque source en Markdown normalisé, en préservant titres, sections et tableaux autant que possible — depuis le xHTML iXBRL, ou depuis le PDF pour les anciens exercices.
+3. **Chunker** le Markdown en passages prêts pour la recherche, avec métadonnées (société, ISIN, exercice, section, offset source).
 4. **Embedder** chaque chunk avec `mistral-embed`.
 5. **Écrire** documents sources et chunks (texte, embedding, `tsvector` français) dans Supabase.
 
-L'extraction PDF est l'étape la plus délicate et la plus susceptible de dégrader la qualité (tableaux financiers, mise en page multi-colonnes). Les tests d'ingestion doivent couvrir le chunking et l'attachement des métadonnées ; la qualité de l'extraction PDF doit être vérifiée sur des URD réels.
+L'extraction est l'étape la plus susceptible de dégrader la qualité. Le xHTML iXBRL est structuré (un atout sur le PDF), mais volumineux et parfois bruité par le balisage XBRL ; le PDF garde ses écueils habituels (tableaux financiers, mise en page multi-colonnes). À noter : le xHTML iXBRL n'a **pas de pagination fixe**, donc les citations s'ancrent sur la **section** plutôt que sur un numéro de page. Les tests d'ingestion doivent couvrir le chunking et l'attachement des métadonnées ; la qualité d'extraction doit être vérifiée sur des URD réels des deux formats.
 
 ## Forme de déploiement
 
@@ -391,7 +391,7 @@ Railway doit faire tourner deux services :
 - Frontend : build Vite statique servi comme application web.
 - Backend : service FastAPI exécutant Uvicorn.
 
-Supabase reste hébergé et stocke les données durables de recherche. Le backend Railway peut rester sans état car chunks, embeddings, vecteurs de recherche plein texte, conversations et citations vivent tous dans Supabase Postgres. Les PDF d'URD bruts restent des entrées d'ingestion locales gitignorées, sauf si un workflow ultérieur les stocke dans un object storage.
+Supabase reste hébergé et stocke les données durables de recherche. Le backend Railway peut rester sans état car chunks, embeddings, vecteurs de recherche plein texte, conversations et citations vivent tous dans Supabase Postgres. Les fichiers d'URD bruts (xHTML ESEF ou PDF) restent des entrées d'ingestion locales gitignorées, sauf si un workflow ultérieur les stocke dans un object storage.
 
 ## Séquence d'implémentation
 
@@ -402,7 +402,7 @@ Supabase reste hébergé et stocke les données durables de recherche. Le backen
 5. Ajouter le client d'API frontend partagé avec injection automatique du bearer token.
 6. Ajouter le point d'entrée de streaming du chat avec une réponse assistant bouchonnée.
 7. Ajouter l'UI de chat AI SDK sur le frontend, pointée vers FastAPI.
-8. Ajouter l'ingestion : extraction PDF→Markdown, chunking, embeddings et écritures Supabase.
+8. Ajouter l'ingestion : extraction xHTML/PDF→Markdown, chunking, embeddings et écritures Supabase.
 9. Ajouter la recherche sémantique avec `pgvector`.
 10. Ajouter la recherche plein texte Postgres (configuration `french`) et la fusion RRF en Python.
 11. Ajouter l'agent document PydanticAI (modèle Mistral) avec dépendances typées et sortie de réponse typée.

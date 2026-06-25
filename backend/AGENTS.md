@@ -22,7 +22,7 @@ Voir la politique universelle dans [../AGENTS.md](../AGENTS.md). Spécificités 
 
 - **Préfère la stdlib :** `pathlib`, `datetime`, `uuid`, `enum`, `dataclasses`, `asyncio`, `collections`, `itertools`, `json`, `urllib`.
 - **Non OK sans justification :** `python-dateutil`, `toolz`, `funcy`, `more-itertools`, micro-libs JSON/string, wrappers « ergonomiques » par-dessus les SDK déclarés.
-- L'extraction de texte PDF (URD → Markdown) est un cas légitime de dépendance : les URD sont des PDF volumineux et complexes (tableaux, mise en page). Choisis une bibliothèque éprouvée plutôt que de réécrire un parser PDF.
+- L'extraction de texte des URD (→ Markdown) est un cas légitime de dépendance. Les URD du flux AMF sont surtout du **xHTML iXBRL** (format ESEF) et, pour de rares anciens exercices, du **PDF** : prévois donc un parser HTML/xHTML éprouvé et un extracteur PDF, plutôt que de réécrire ces parsers. Voir [../data/README.md](../data/README.md).
 - Les dépendances de dev (test/lint/build) ont une barre plus souple mais restent des outils répandus et à faible empreinte (`pytest`, `ruff`, `httpx`).
 
 ## Arborescence (à créer pendant le build)
@@ -44,7 +44,7 @@ backend/
 │   ├── grounding/       # validation des citations et vérification de l'ancrage des réponses
 │   ├── database/        # modèles SQLAlchemy, wrapper client Supabase, helpers de requêtes typés
 │   └── prompts/         # gabarits de prompt/instructions si non colocalisés avec assistant
-├── ingest/              # scripts d'ingestion ponctuels (extraction PDF→Markdown, chunking, embeddings, écritures Supabase)
+├── ingest/              # scripts d'ingestion ponctuels (extraction xHTML/PDF→Markdown, chunking, embeddings, écritures Supabase)
 ├── tests/
 └── pyproject.toml
 ```

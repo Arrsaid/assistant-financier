@@ -33,7 +33,7 @@ assistant-financier/
 
 Dépendances acceptables :
 
-- Ce qui est réellement difficile à faire correctement (clients HTTP, serveurs ASGI, drivers SQL, parsers, SDK de LLM, ORM, migrations, SDK d'auth, extraction de texte PDF).
+- Ce qui est réellement difficile à faire correctement (clients HTTP, serveurs ASGI, drivers SQL, parsers, SDK de LLM, ORM, migrations, SDK d'auth, extraction de texte xHTML/PDF).
 - La stack déclarée (FastAPI, React, Vite, clients Supabase, SDK Mistral, etc.).
 
 Non acceptable :
